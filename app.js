@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('git commit -m "Add Express app with MongoDB connection and hotel management routes"');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const bodyParser = require('body-parser'); // For compatibility with user's original steps

@@ -1,21 +1,33 @@
+// ...existing code...
 const mongoose = require('mongoose');
 
-/**
- * Connects the application to the MongoDB database using Mongoose.
- * It uses the MONGO_URI environment variable or falls back to a local URI.
- */
 const connectDB = async () => {
-    try {
-        const conn = await mongoose.connect(process.env.MONGO_URI, {
-            // useNewUrlParser: true, // Deprecated in Mongoose 6+
-            // useUnifiedTopology: true // Deprecated in Mongoose 6+
-        });
-        console.log(` MongoDB Connected: ${conn.connection.host}`);
-    } catch (err) {
-        console.error(' MongoDB connection failed:', err.message);
-        // Exit process with failure
-        process.exit(1);
+    const uri = process.env.MONGO_URI;
+    if (!uri) {
+        throw new Error('MONGO_URI environment variable is not set');
     }
+
+    // Reuse existing connection in serverless environments
+    if (mongoose.connection.readyState === 1) {
+        return mongoose;
+    }
+    if (global._mongoosePromise) {
+        return global._mongoosePromise;
+    }
+
+    global._mongoosePromise = mongoose.connect(uri)
+        .then(conn => {
+            console.log(`MongoDB Connected: ${conn.connection.host}`);
+            return mongoose;
+        })
+        .catch(err => {
+            console.error('MongoDB connection failed:', err);
+            global._mongoosePromise = null;
+            throw err;
+        });
+
+    return global._mongoosePromise;
 };
 
 module.exports = connectDB;
+// ...existing code...
