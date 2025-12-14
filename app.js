@@ -20,7 +20,7 @@ const app = express();
 // --- 🔒 CORS Configuration ---
 const allowedOrigins = [
     'http://localhost:5173',          // For local development (e.g., React Dev Server)
-    'https://your-frontend-domain.com' // **IMPORTANT: Replace with your actual frontend URL!**
+    'https://hotel-management-mongo-db.vercel.app/' // my actual frontend URL!**
 ];
 
 const corsOptions = {
