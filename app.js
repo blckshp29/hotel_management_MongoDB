@@ -9,64 +9,67 @@ const roomRoutes = require('./routes/room.js');
 const guestRoutes = require('./routes/guest.js');
 const bookingRoutes = require('./routes/booking.js');
 
-// Load environment variables
 dotenv.config();
-
-// Connect to Database (moved to startServer for cleaner flow)
-// connectDB(); // No need to call here, it's inside startServer()
-
 const app = express();
 
 // --- 🔒 CORS Configuration ---
 const allowedOrigins = [
-  "http://localhost:5173",      // Your main local port
-  "http://localhost:5174",      // Your backup local port (Vite uses this if 5173 is busy)
-  "https://hmsluxe.vercel.app/" // 🚨 IMPORTANT: Your actual deployed Vercel link
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://hmsluxe.vercel.app" // 🚀 FIXED: Removed the trailing slash "/"
 ];
 
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
+        // Allow requests with no origin (like mobile apps)
         if (!origin) return callback(null, true); 
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-            return callback(new Error(msg), false);
+        
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        } else {
+            console.log("Blocked by CORS: ", origin); // Helpful for debugging
+            return callback(new Error('Not allowed by CORS'), false);
         }
-        return callback(null, true);
     },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Allowed methods
-    credentials: true,                        // Allows cookies and Authorization headers
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
+    credentials: true,
     optionsSuccessStatus: 204
 };
 
-const PORT = process.env.PORT || 3000;
+// --- 🛠️ MIDDLEWARE ORDER (CRITICAL) ---
+// 1. CORS MUST be first to handle Preflight (OPTIONS) requests
+app.use(cors(corsOptions)); 
 
-// Middleware
+// 2. Body Parsers
 app.use(express.json());
 app.use(bodyParser.json());
 
-// 💡 INSERT CORS HERE
-app.use(cors(corsOptions)); 
-
-// Root route
+// --- 📍 ROUTES ---
 app.get('/', (req, res) => {
-    res.send('<h1>🏨 Hotel Management API is running!</h1><p>Access endpoints at /api/rooms, /api/guests, and /api/bookings</p>');
+    res.send('<h1>🏨 Hotel Management API is running!</h1>');
 });
 
-// Mount routers
 app.use('/api/rooms', roomRoutes);
 app.use('/api/guests', guestRoutes);
 app.use('/api/bookings', bookingRoutes);
 
-// Start server after DB connects and handle connection errors
-const startServer = async () => {
-    try {
-        await connectDB(); // uses [`connectDB`](config/db.js)
-        app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
-    } catch (err) {
-        console.error('Failed to connect to database, exiting:', err.message || err);
-        process.exit(1); // exit to avoid running without DB
-    }
-};
+// --- 🚀 SERVER START (Fixed for Vercel) ---
+const PORT = process.env.PORT || 3000;
 
-startServer();
+if (process.env.NODE_ENV !== 'production') {
+    const startServer = async () => {
+        try {
+            await connectDB();
+            app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+        } catch (err) {
+            console.error('Failed to connect to database:', err.message);
+        }
+    };
+    startServer();
+} else {
+    // For Vercel Production, just connect to DB
+    connectDB();
+}
+
+// ALWAYS export the app
+module.exports = app;
