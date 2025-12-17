@@ -19,8 +19,9 @@ const app = express();
 
 // --- 🔒 CORS Configuration ---
 const allowedOrigins = [
-    'http://localhost:5173',          // For local development (e.g., React Dev Server)
-    'https://hotel-management-mongo-db.vercel.app/' // my actual frontend URL!**
+  "http://localhost:5173",      // Your main local port
+  "http://localhost:5174",      // Your backup local port (Vite uses this if 5173 is busy)
+  "https://hmsluxe.vercel.app/" // 🚨 IMPORTANT: Your actual deployed Vercel link
 ];
 
 const corsOptions = {
